@@ -1,0 +1,29 @@
+{
+  "mcpServers": {
+    "kraftdo-tools": {
+      "command": "",
+      "args": [
+        "/home/cesar/Dev/tools/venv/bin/python3",
+        "/home/cesar/Dev/tools/mcp_server.py"
+      ]
+    },
+    "kraftdo-nfc": {
+      "command": "",
+      "args": [
+        "php",
+        "artisan,boost:mcp",
+        "--cwd",
+        "/home/cesar/Dev/kraftdo-nfc-app/kraftdo-nfc"
+      ]
+    },
+    "kraftdo-cms": {
+      "command": "",
+      "args": [
+        "php",
+        "artisan,boost:mcp",
+        "--cwd",
+        "/home/cesar/Dev/kraftdo-cms"
+      ]
+    }
+  }
+}
