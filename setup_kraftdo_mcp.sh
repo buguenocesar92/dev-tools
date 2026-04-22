@@ -1,35 +1,41 @@
 #!/bin/bash
 DEV_DIR="/home/cesar/Dev"
 VENV_PYTHON="$DEV_DIR/tools/venv/bin/python3"
-PYTHON_SERVER="$DEV_DIR/tools/mcp_server.py"
+PYTHON_TOOLS_SERVER="$DEV_DIR/tools/mcp_server.py"
 
-echo "🧹 Limpiando registros antiguos..."
-# Borramos registros globales para evitar duplicados
-/home/cesar/.npm-global/bin/gemini mcp remove kraftdo-tools --scope user > /dev/null 2>&1
+echo "📂 Escaneando proyectos (Laravel y Python)..."
 
-echo "📂 Escaneando y configurando proyectos..."
-
-# 1. Buscar proyectos Laravel
+# --- DETECCIÓN DE LARAVEL ---
 find "$DEV_DIR" -maxdepth 3 -name "artisan" | while read -r artisan_path; do
     PROJECT_PATH=$(dirname "$artisan_path")
-    PROJECT_NAME=$(basename "$PROJECT_PATH")
-    
     mkdir -p "$PROJECT_PATH/.gemini"
-    
-    # Creamos el config LOCAL. Gemini leerá esto SOLO cuando estés en esta carpeta.
     cat <<EOF > "$PROJECT_PATH/.gemini/config.json"
 {
   "mcpServers": {
-    "laravel-server": {
-      "command": "php",
-      "args": ["artisan", "boost:mcp"]
-    },
-    "kraftdo-tools": {
-      "command": "$VENV_PYTHON",
-      "args": ["$PYTHON_SERVER"]
-    }
+    "laravel-server": { "command": "php", "args": ["artisan", "boost:mcp"] },
+    "kraftdo-tools": { "command": "$VENV_PYTHON", "args": ["$PYTHON_TOOLS_SERVER"] }
   }
 }
 EOF
-    echo "✅ Configurado localmente: $PROJECT_NAME"
+    echo "✅ Laravel detectado: $(basename "$PROJECT_PATH")"
+done
+
+# --- DETECCIÓN DE PYTHON (Ej: sistema-universal) ---
+# Buscamos carpetas que tengan requirements.txt o archivos .py y NO sean carpetas de sistema
+find "$DEV_DIR" -maxdepth 2 -type d ! -name "tools" ! -name "venv" | while read -r py_path; do
+    # Si tiene un archivo .py o requirements.txt, lo tratamos como proyecto Python
+    if ls "$py_path"/*.py >/dev/null 2>&1 || [ -f "$py_path/requirements.txt" ]; then
+        # Evitar sobreescribir si ya lo hizo Laravel
+        if [ ! -f "$py_path/.gemini/config.json" ]; then
+            mkdir -p "$py_path/.gemini"
+            cat <<EOF > "$py_path/.gemini/config.json"
+{
+  "mcpServers": {
+    "kraftdo-tools": { "command": "$VENV_PYTHON", "args": ["$PYTHON_TOOLS_SERVER"] }
+  }
+}
+EOF
+            echo "🐍 Python detectado: $(basename "$py_path")"
+        fi
+    fi
 done
